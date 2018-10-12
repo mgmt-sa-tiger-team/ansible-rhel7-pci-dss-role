@@ -1,2 +1,22 @@
 ---
 # defaults file for rhel7-role-pci-dss
+inactivity_timeout_value: '900'
+gpg_valid_fingerprints: ("567E 347A D004 4ADE 55BA 8A5F 199E 2F91 FD43 1D51" "43A6 E49C 4A38 F4BE 9ABF 2A53 4568 9C88 2FA6 58E0")
+audit_arch: b{{ ansible_architecture | regex_replace('.*(\d\d$)','\1') }}
+auditd_max_log_file: '6'
+auditd_max_log_file_action: rotate
+auditd_space_left_action: email
+auditd_admin_space_left_action: single
+auditd_action_mail_acct: root
+auditd_num_logs: '5'
+password_pam_unix_remember: '4'
+accounts_passwords_pam_faillock_deny: '6'
+accounts_passwords_pam_faillock_unlock_time: '1800'
+accounts_passwords_pam_faillock_fail_interval: '900'
+password_pam_lcredit: '-1'
+password_pam_dcredit: '-1'
+password_pam_minlen: '7'
+password_pam_ucredit: '-1'
+account_disable_post_pw_expiration: '90'
+accounts_maximum_age_login_defs: '90'
+sshd_idle_timeout_value: '900'
