@@ -284,18 +284,12 @@
     - CJIS-5.5.5
     - DISA-STIG-RHEL-07-010100
 
--   name: XCCDF Value inactivity_timeout_value
-    set_fact:
-        inactivity_timeout_value: '900'
-    tags:
-    - always
-
 -   name: Set GNOME3 Screensaver Inactivity Timeout
     ini_file:
         dest: /etc/dconf/db/local.d/00-security-settings
         section: org/gnome/desktop/screensaver
         option: idle-delay
-        value: '{{ inactivity_timeout_value }}'
+        value: "{{ inactivity_timeout_value }}"
         create: true
     tags:
     - dconf_gnome_screensaver_idle_delay
@@ -336,10 +330,10 @@
     register: yum_find
 
 -   name: Ensure gpgcheck Enabled For All yum Package Repositories
-    with_items: '{{ yum_find.files }}'
+    with_items: "{{ yum_find.files }}"
     lineinfile:
         create: true
-        dest: '{{ item.path }}'
+        dest: "{{ item.path }}"
         regexp: ^gpgcheck
         line: gpgcheck=1
     tags:
@@ -395,24 +389,6 @@
     - PCI-DSS-Req-6.2
     - CJIS-5.10.4.1
 
--   name: Set Fact - Valid fingerprints
-    set_fact:
-        gpg_valid_fingerprints: ("567E 347A D004 4ADE 55BA 8A5F 199E 2F91 FD43 1D51" "43A6 E49C 4A38 F4BE 9ABF 2A53 4568 9C88
-            2FA6 58E0")
-    tags:
-    - ensure_redhat_gpgkey_installed
-    - high_severity
-    - restrict_strategy
-    - medium_complexity
-    - medium_disruption
-    - CCE-26957-1
-    - NIST-800-53-CM-5(3)
-    - NIST-800-53-SI-7
-    - NIST-800-53-MA-1(b)
-    - NIST-800-171-3.4.8
-    - PCI-DSS-Req-6.2
-    - CJIS-5.10.4.1
-
 -   name: Import RedHat GPG key
     rpm_key:
         state: present
@@ -442,7 +418,7 @@
 
 -   name: Ensure GPG check is globally activated (yum)
     ini_file:
-        dest: '{{item}}'
+        dest: "{{item}}"
         section: main
         option: gpgcheck
         value: 1
@@ -466,7 +442,7 @@
 
 -   name: Ensure GPG check is globally activated (dnf)
     ini_file:
-        dest: '{{item}}'
+        dest: "{{item}}"
         section: main
         option: gpgcheck
         value: 1
@@ -508,7 +484,7 @@
 
 -   name: Ensure AIDE is installed
     package:
-        name: '{{item}}'
+        name: "{{item}}"
         state: present
     with_items:
     - aide
@@ -558,7 +534,7 @@
 
 -   name: Ensure AIDE is installed
     package:
-        name: '{{item}}'
+        name: "{{item}}"
         state: present
     with_items:
     - aide
@@ -684,8 +660,8 @@
     - DISA-STIG-RHEL-07-010010
 
 -   name: Correct file permissions with RPM
-    shell: rpm --quiet --setperms $(rpm -qf '{{item}}')
-    with_items: '{{ files_with_incorrect_permissions.stdout_lines }}'
+    shell: rpm --quiet --setperms $(rpm -qf "{{item}}")
+    with_items: "{{ files_with_incorrect_permissions.stdout_lines }}"
     when: files_with_incorrect_permissions.stdout_lines | length > 0
     tags:
     - rpm_verify_permissions
@@ -768,8 +744,8 @@
     - DISA-STIG-RHEL-07-010020
 
 -   name: Reinstall packages of files with incorrect hash
-    shell: '{{package_manager_reinstall_cmd}} $(rpm -qf ''{{item}}'')'
-    with_items: '{{ files_with_incorrect_hash.stdout_lines }}'
+    shell: "{{package_manager_reinstall_cmd}} $(rpm -qf '"{{item}}"')'
+    with_items: "{{ files_with_incorrect_hash.stdout_lines }}"
     when: package_manager_reinstall_cmd is defined and (files_with_incorrect_hash.stdout_lines | length > 0)
     tags:
     - rpm_verify_hashes
@@ -876,7 +852,7 @@
         contains: ^.*path={{ item }} .*$
         patterns: '*.rules'
     with_items:
-    - '{{ find_result.stdout_lines }}'
+    - "{{ find_result.stdout_lines }}"
     register: files_result
     tags:
     - audit_rules_privileged_commands
@@ -902,12 +878,12 @@
 
 -   name: Overwrites the rule in rules.d
     lineinfile:
-        path: '{{ item.1.path }}'
+        path: "{{ item.1.path }}"
         line: -a always,exit -F path={{ item.0.item }} -F perm=x -F auid>=1000 -F auid!=4294967295 -F key=privileged
         create: false
         regexp: ^.*path={{ item.0.item }} .*$
     with_subelements:
-    - '{{ files_result.results }}'
+    - "{{ files_result.results }}"
     - files
     tags:
     - audit_rules_privileged_commands
@@ -937,7 +913,7 @@
         line: -a always,exit -F path={{ item.item }} -F perm=x -F auid>=1000 -F auid!=4294967295 -F key=privileged
         create: true
     with_items:
-    - '{{ files_result.results }}'
+    - "{{ files_result.results }}"
     when: item.matched == 0
     tags:
     - audit_rules_privileged_commands
@@ -968,7 +944,7 @@
         create: true
         regexp: ^.*path={{ item.item }} .*$
     with_items:
-    - '{{ files_result.results }}'
+    - "{{ files_result.results }}"
     tags:
     - audit_rules_privileged_commands
     - medium_severity
@@ -991,10 +967,6 @@
     - CJIS-5.4.1.1
     - DISA-STIG-RHEL-07-030360
 
--   name: Set architecture for audit lchown tasks
-    set_fact:
-        audit_arch: b{{ ansible_architecture | regex_replace('.*(\d\d$)','\1') }}
-
 -   name: Search /etc/audit/rules.d for other DAC audit rules
     find:
         paths: /etc/audit/rules.d
@@ -1012,12 +984,12 @@
 -   name: Use matched file as the recipient for the rule
     set_fact:
         all_files:
-        - '{{ find_lchown.files | map(attribute=''path'') | list | first }}'
+        - "{{ find_lchown.files | map(attribute=''path'') | list | first }}"
     when: find_lchown.matched > 0
 
 -   name: Inserts/replaces the lchown rule in rules.d when on x86
     lineinfile:
-        path: '{{ all_files[0] }}'
+        path: "{{ all_files[0] }}"
         line: -a always,exit -F arch=b32 -S lchown -F auid>=1000 -F auid!=4294967295 -F key=perm_mod
         create: true
     tags:
@@ -1042,7 +1014,7 @@
 
 -   name: Inserts/replaces the lchown rule in rules.d when on x86_64
     lineinfile:
-        path: '{{ all_files[0] }}'
+        path: "{{ all_files[0] }}"
         line: -a always,exit -F arch=b64 -S lchown -F auid>=1000 -F auid!=4294967295 -F key=perm_mod
         create: true
     when: audit_arch == 'b64'
@@ -1118,10 +1090,6 @@
     - CJIS-5.4.1.1
     - DISA-STIG-RHEL-07-030390
 
--   name: Set architecture for audit fchownat tasks
-    set_fact:
-        audit_arch: b{{ ansible_architecture | regex_replace('.*(\d\d$)','\1') }}
-
 -   name: Search /etc/audit/rules.d for other DAC audit rules
     find:
         paths: /etc/audit/rules.d
@@ -1139,12 +1107,12 @@
 -   name: Use matched file as the recipient for the rule
     set_fact:
         all_files:
-        - '{{ find_fchownat.files | map(attribute=''path'') | list | first }}'
+        - "{{ find_fchownat.files | map(attribute=''path'') | list | first }}"
     when: find_fchownat.matched > 0
 
 -   name: Inserts/replaces the fchownat rule in rules.d when on x86
     lineinfile:
-        path: '{{ all_files[0] }}'
+        path: "{{ all_files[0] }}"
         line: -a always,exit -F arch=b32 -S fchownat -F auid>=1000 -F auid!=4294967295 -F key=perm_mod
         create: true
     tags:
@@ -1169,7 +1137,7 @@
 
 -   name: Inserts/replaces the fchownat rule in rules.d when on x86_64
     lineinfile:
-        path: '{{ all_files[0] }}'
+        path: "{{ all_files[0] }}"
         line: -a always,exit -F arch=b64 -S fchownat -F auid>=1000 -F auid!=4294967295 -F key=perm_mod
         create: true
     when: audit_arch == 'b64'
@@ -1245,10 +1213,6 @@
     - CJIS-5.4.1.1
     - DISA-STIG-RHEL-07-030400
 
--   name: Set architecture for audit setxattr tasks
-    set_fact:
-        audit_arch: b{{ ansible_architecture | regex_replace('.*(\d\d$)','\1') }}
-
 -   name: Search /etc/audit/rules.d for other DAC audit rules
     find:
         paths: /etc/audit/rules.d
@@ -1266,12 +1230,12 @@
 -   name: Use matched file as the recipient for the rule
     set_fact:
         all_files:
-        - '{{ find_setxattr.files | map(attribute=''path'') | list | first }}'
+        - "{{ find_setxattr.files | map(attribute=''path'') | list | first }}"
     when: find_setxattr.matched > 0
 
 -   name: Inserts/replaces the setxattr rule in rules.d when on x86
     lineinfile:
-        path: '{{ all_files[0] }}'
+        path: "{{ all_files[0] }}"
         line: -a always,exit -F arch=b32 -S setxattr -F auid>=1000 -F auid!=4294967295 -F key=perm_mod
         create: true
     tags:
@@ -1296,7 +1260,7 @@
 
 -   name: Inserts/replaces the setxattr rule in rules.d when on x86_64
     lineinfile:
-        path: '{{ all_files[0] }}'
+        path: "{{ all_files[0] }}"
         line: -a always,exit -F arch=b64 -S setxattr -F auid>=1000 -F auid!=4294967295 -F key=perm_mod
         create: true
     when: audit_arch == 'b64'
@@ -1372,10 +1336,6 @@
     - CJIS-5.4.1.1
     - DISA-STIG-RHEL-07-030440
 
--   name: Set architecture for audit chmod tasks
-    set_fact:
-        audit_arch: b{{ ansible_architecture | regex_replace('.*(\d\d$)','\1') }}
-
 -   name: Search /etc/audit/rules.d for other DAC audit rules
     find:
         paths: /etc/audit/rules.d
@@ -1393,12 +1353,12 @@
 -   name: Use matched file as the recipient for the rule
     set_fact:
         all_files:
-        - '{{ find_chmod.files | map(attribute=''path'') | list | first }}'
+        - "{{ find_chmod.files | map(attribute=''path'') | list | first }}"
     when: find_chmod.matched > 0
 
 -   name: Inserts/replaces the chmod rule in rules.d when on x86
     lineinfile:
-        path: '{{ all_files[0] }}'
+        path: "{{ all_files[0] }}"
         line: -a always,exit -F arch=b32 -S chmod -F auid>=1000 -F auid!=4294967295 -F key=perm_mod
         create: true
     tags:
@@ -1423,7 +1383,7 @@
 
 -   name: Inserts/replaces the chmod rule in rules.d when on x86_64
     lineinfile:
-        path: '{{ all_files[0] }}'
+        path: "{{ all_files[0] }}"
         line: -a always,exit -F arch=b64 -S chmod -F auid>=1000 -F auid!=4294967295 -F key=perm_mod
         create: true
     when: audit_arch == 'b64'
@@ -1499,10 +1459,6 @@
     - CJIS-5.4.1.1
     - DISA-STIG-RHEL-07-030410
 
--   name: Set architecture for audit removexattr tasks
-    set_fact:
-        audit_arch: b{{ ansible_architecture | regex_replace('.*(\d\d$)','\1') }}
-
 -   name: Search /etc/audit/rules.d for other DAC audit rules
     find:
         paths: /etc/audit/rules.d
@@ -1520,12 +1476,12 @@
 -   name: Use matched file as the recipient for the rule
     set_fact:
         all_files:
-        - '{{ find_removexattr.files | map(attribute=''path'') | list | first }}'
+        - "{{ find_removexattr.files | map(attribute=''path'') | list | first }}"
     when: find_removexattr.matched > 0
 
 -   name: Inserts/replaces the removexattr rule in rules.d when on x86
     lineinfile:
-        path: '{{ all_files[0] }}'
+        path: "{{ all_files[0] }}"
         line: -a always,exit -F arch=b32 -S removexattr -F auid>=1000 -F auid!=4294967295 -F key=perm_mod
         create: true
     tags:
@@ -1550,7 +1506,7 @@
 
 -   name: Inserts/replaces the removexattr rule in rules.d when on x86_64
     lineinfile:
-        path: '{{ all_files[0] }}'
+        path: "{{ all_files[0] }}"
         line: -a always,exit -F arch=b64 -S removexattr -F auid>=1000 -F auid!=4294967295 -F key=perm_mod
         create: true
     when: audit_arch == 'b64'
@@ -1626,10 +1582,6 @@
     - CJIS-5.4.1.1
     - DISA-STIG-RHEL-07-030470
 
--   name: Set architecture for audit lsetxattr tasks
-    set_fact:
-        audit_arch: b{{ ansible_architecture | regex_replace('.*(\d\d$)','\1') }}
-
 -   name: Search /etc/audit/rules.d for other DAC audit rules
     find:
         paths: /etc/audit/rules.d
@@ -1647,12 +1599,12 @@
 -   name: Use matched file as the recipient for the rule
     set_fact:
         all_files:
-        - '{{ find_lsetxattr.files | map(attribute=''path'') | list | first }}'
+        - "{{ find_lsetxattr.files | map(attribute=''path'') | list | first }}"
     when: find_lsetxattr.matched > 0
 
 -   name: Inserts/replaces the lsetxattr rule in rules.d when on x86
     lineinfile:
-        path: '{{ all_files[0] }}'
+        path: "{{ all_files[0] }}"
         line: -a always,exit -F arch=b32 -S lsetxattr -F auid>=1000 -F auid!=4294967295 -F key=perm_mod
         create: true
     tags:
@@ -1677,7 +1629,7 @@
 
 -   name: Inserts/replaces the lsetxattr rule in rules.d when on x86_64
     lineinfile:
-        path: '{{ all_files[0] }}'
+        path: "{{ all_files[0] }}"
         line: -a always,exit -F arch=b64 -S lsetxattr -F auid>=1000 -F auid!=4294967295 -F key=perm_mod
         create: true
     when: audit_arch == 'b64'
@@ -1753,10 +1705,6 @@
     - CJIS-5.4.1.1
     - DISA-STIG-RHEL-07-030460
 
--   name: Set architecture for audit chown tasks
-    set_fact:
-        audit_arch: b{{ ansible_architecture | regex_replace('.*(\d\d$)','\1') }}
-
 -   name: Search /etc/audit/rules.d for other DAC audit rules
     find:
         paths: /etc/audit/rules.d
@@ -1774,12 +1722,12 @@
 -   name: Use matched file as the recipient for the rule
     set_fact:
         all_files:
-        - '{{ find_chown.files | map(attribute=''path'') | list | first }}'
+        - "{{ find_chown.files | map(attribute=''path'') | list | first }}"
     when: find_chown.matched > 0
 
 -   name: Inserts/replaces the chown rule in rules.d when on x86
     lineinfile:
-        path: '{{ all_files[0] }}'
+        path: "{{ all_files[0] }}"
         line: -a always,exit -F arch=b32 -S chown -F auid>=1000 -F auid!=4294967295 -F key=perm_mod
         create: true
     tags:
@@ -1804,7 +1752,7 @@
 
 -   name: Inserts/replaces the chown rule in rules.d when on x86_64
     lineinfile:
-        path: '{{ all_files[0] }}'
+        path: "{{ all_files[0] }}"
         line: -a always,exit -F arch=b64 -S chown -F auid>=1000 -F auid!=4294967295 -F key=perm_mod
         create: true
     when: audit_arch == 'b64'
@@ -1880,10 +1828,6 @@
     - CJIS-5.4.1.1
     - DISA-STIG-RHEL-07-030370
 
--   name: Set architecture for audit fremovexattr tasks
-    set_fact:
-        audit_arch: b{{ ansible_architecture | regex_replace('.*(\d\d$)','\1') }}
-
 -   name: Search /etc/audit/rules.d for other DAC audit rules
     find:
         paths: /etc/audit/rules.d
@@ -1901,12 +1845,12 @@
 -   name: Use matched file as the recipient for the rule
     set_fact:
         all_files:
-        - '{{ find_fremovexattr.files | map(attribute=''path'') | list | first }}'
+        - "{{ find_fremovexattr.files | map(attribute=''path'') | list | first }}"
     when: find_fremovexattr.matched > 0
 
 -   name: Inserts/replaces the fremovexattr rule in rules.d when on x86
     lineinfile:
-        path: '{{ all_files[0] }}'
+        path: "{{ all_files[0] }}"
         line: -a always,exit -F arch=b32 -S fremovexattr -F auid>=1000 -F auid!=4294967295 -F key=perm_mod
         create: true
     tags:
@@ -1931,7 +1875,7 @@
 
 -   name: Inserts/replaces the fremovexattr rule in rules.d when on x86_64
     lineinfile:
-        path: '{{ all_files[0] }}'
+        path: "{{ all_files[0] }}"
         line: -a always,exit -F arch=b64 -S fremovexattr -F auid>=1000 -F auid!=4294967295 -F key=perm_mod
         create: true
     when: audit_arch == 'b64'
@@ -2007,10 +1951,6 @@
     - CJIS-5.4.1.1
     - DISA-STIG-RHEL-07-030480
 
--   name: Set architecture for audit lremovexattr tasks
-    set_fact:
-        audit_arch: b{{ ansible_architecture | regex_replace('.*(\d\d$)','\1') }}
-
 -   name: Search /etc/audit/rules.d for other DAC audit rules
     find:
         paths: /etc/audit/rules.d
@@ -2028,12 +1968,12 @@
 -   name: Use matched file as the recipient for the rule
     set_fact:
         all_files:
-        - '{{ find_lremovexattr.files | map(attribute=''path'') | list | first }}'
+        - "{{ find_lremovexattr.files | map(attribute=''path'') | list | first }}"
     when: find_lremovexattr.matched > 0
 
 -   name: Inserts/replaces the lremovexattr rule in rules.d when on x86
     lineinfile:
-        path: '{{ all_files[0] }}'
+        path: "{{ all_files[0] }}"
         line: -a always,exit -F arch=b32 -S lremovexattr -F auid>=1000 -F auid!=4294967295 -F key=perm_mod
         create: true
     tags:
@@ -2058,7 +1998,7 @@
 
 -   name: Inserts/replaces the lremovexattr rule in rules.d when on x86_64
     lineinfile:
-        path: '{{ all_files[0] }}'
+        path: "{{ all_files[0] }}"
         line: -a always,exit -F arch=b64 -S lremovexattr -F auid>=1000 -F auid!=4294967295 -F key=perm_mod
         create: true
     when: audit_arch == 'b64'
@@ -2134,10 +2074,6 @@
     - CJIS-5.4.1.1
     - DISA-STIG-RHEL-07-030490
 
--   name: Set architecture for audit fchmod tasks
-    set_fact:
-        audit_arch: b{{ ansible_architecture | regex_replace('.*(\d\d$)','\1') }}
-
 -   name: Search /etc/audit/rules.d for other DAC audit rules
     find:
         paths: /etc/audit/rules.d
@@ -2155,12 +2091,12 @@
 -   name: Use matched file as the recipient for the rule
     set_fact:
         all_files:
-        - '{{ find_fchmod.files | map(attribute=''path'') | list | first }}'
+        - "{{ find_fchmod.files | map(attribute=''path'') | list | first }}"
     when: find_fchmod.matched > 0
 
 -   name: Inserts/replaces the fchmod rule in rules.d when on x86
     lineinfile:
-        path: '{{ all_files[0] }}'
+        path: "{{ all_files[0] }}"
         line: -a always,exit -F arch=b32 -S fchmod -F auid>=1000 -F auid!=4294967295 -F key=perm_mod
         create: true
     tags:
@@ -2185,7 +2121,7 @@
 
 -   name: Inserts/replaces the fchmod rule in rules.d when on x86_64
     lineinfile:
-        path: '{{ all_files[0] }}'
+        path: "{{ all_files[0] }}"
         line: -a always,exit -F arch=b64 -S fchmod -F auid>=1000 -F auid!=4294967295 -F key=perm_mod
         create: true
     when: audit_arch == 'b64'
@@ -2261,10 +2197,6 @@
     - CJIS-5.4.1.1
     - DISA-STIG-RHEL-07-030420
 
--   name: Set architecture for audit fchmodat tasks
-    set_fact:
-        audit_arch: b{{ ansible_architecture | regex_replace('.*(\d\d$)','\1') }}
-
 -   name: Search /etc/audit/rules.d for other DAC audit rules
     find:
         paths: /etc/audit/rules.d
@@ -2282,12 +2214,12 @@
 -   name: Use matched file as the recipient for the rule
     set_fact:
         all_files:
-        - '{{ find_fchmodat.files | map(attribute=''path'') | list | first }}'
+        - "{{ find_fchmodat.files | map(attribute=''path'') | list | first }}"
     when: find_fchmodat.matched > 0
 
 -   name: Inserts/replaces the fchmodat rule in rules.d when on x86
     lineinfile:
-        path: '{{ all_files[0] }}'
+        path: "{{ all_files[0] }}"
         line: -a always,exit -F arch=b32 -S fchmodat -F auid>=1000 -F auid!=4294967295 -F key=perm_mod
         create: true
     tags:
@@ -2312,7 +2244,7 @@
 
 -   name: Inserts/replaces the fchmodat rule in rules.d when on x86_64
     lineinfile:
-        path: '{{ all_files[0] }}'
+        path: "{{ all_files[0] }}"
         line: -a always,exit -F arch=b64 -S fchmodat -F auid>=1000 -F auid!=4294967295 -F key=perm_mod
         create: true
     when: audit_arch == 'b64'
@@ -2388,10 +2320,6 @@
     - CJIS-5.4.1.1
     - DISA-STIG-RHEL-07-030430
 
--   name: Set architecture for audit fsetxattr tasks
-    set_fact:
-        audit_arch: b{{ ansible_architecture | regex_replace('.*(\d\d$)','\1') }}
-
 -   name: Search /etc/audit/rules.d for other DAC audit rules
     find:
         paths: /etc/audit/rules.d
@@ -2409,12 +2337,12 @@
 -   name: Use matched file as the recipient for the rule
     set_fact:
         all_files:
-        - '{{ find_fsetxattr.files | map(attribute=''path'') | list | first }}'
+        - "{{ find_fsetxattr.files | map(attribute=''path'') | list | first }}"
     when: find_fsetxattr.matched > 0
 
 -   name: Inserts/replaces the fsetxattr rule in rules.d when on x86
     lineinfile:
-        path: '{{ all_files[0] }}'
+        path: "{{ all_files[0] }}"
         line: -a always,exit -F arch=b32 -S fsetxattr -F auid>=1000 -F auid!=4294967295 -F key=perm_mod
         create: true
     tags:
@@ -2439,7 +2367,7 @@
 
 -   name: Inserts/replaces the fsetxattr rule in rules.d when on x86_64
     lineinfile:
-        path: '{{ all_files[0] }}'
+        path: "{{ all_files[0] }}"
         line: -a always,exit -F arch=b64 -S fsetxattr -F auid>=1000 -F auid!=4294967295 -F key=perm_mod
         create: true
     when: audit_arch == 'b64'
@@ -2515,10 +2443,6 @@
     - CJIS-5.4.1.1
     - DISA-STIG-RHEL-07-030450
 
--   name: Set architecture for audit fchown tasks
-    set_fact:
-        audit_arch: b{{ ansible_architecture | regex_replace('.*(\d\d$)','\1') }}
-
 -   name: Search /etc/audit/rules.d for other DAC audit rules
     find:
         paths: /etc/audit/rules.d
@@ -2536,12 +2460,12 @@
 -   name: Use matched file as the recipient for the rule
     set_fact:
         all_files:
-        - '{{ find_fchown.files | map(attribute=''path'') | list | first }}'
+        - "{{ find_fchown.files | map(attribute=''path'') | list | first }}"
     when: find_fchown.matched > 0
 
 -   name: Inserts/replaces the fchown rule in rules.d when on x86
     lineinfile:
-        path: '{{ all_files[0] }}'
+        path: "{{ all_files[0] }}"
         line: -a always,exit -F arch=b32 -S fchown -F auid>=1000 -F auid!=4294967295 -F key=perm_mod
         create: true
     tags:
@@ -2566,7 +2490,7 @@
 
 -   name: Inserts/replaces the fchown rule in rules.d when on x86_64
     lineinfile:
-        path: '{{ all_files[0] }}'
+        path: "{{ all_files[0] }}"
         line: -a always,exit -F arch=b64 -S fchown -F auid>=1000 -F auid!=4294967295 -F key=perm_mod
         create: true
     when: audit_arch == 'b64'
@@ -2642,17 +2566,11 @@
     - CJIS-5.4.1.1
     - DISA-STIG-RHEL-07-030380
 
--   name: XCCDF Value var_auditd_max_log_file
-    set_fact:
-        var_auditd_max_log_file: '6'
-    tags:
-    - always
-
 -   name: Configure auditd Max Log File Size
     lineinfile:
         dest: /etc/audit/auditd.conf
         regexp: ^\s*max_log_file\s*=\s*.*$
-        line: max_log_file = {{ var_auditd_max_log_file }}
+        line: max_log_file = {{ auditd_max_log_file }}
         state: present
     tags:
     - auditd_data_retention_max_log_file
@@ -2667,16 +2585,10 @@
     - PCI-DSS-Req-10.7
     - CJIS-5.4.1.1
 
--   name: XCCDF Value var_auditd_max_log_file_action
-    set_fact:
-        var_auditd_max_log_file_action: rotate
-    tags:
-    - always
-
 -   name: Configure auditd max_log_file_action Upon Reaching Maximum Log Size
     lineinfile:
         dest: /etc/audit/auditd.conf
-        line: max_log_file_action = {{ var_auditd_max_log_file_action }}
+        line: max_log_file_action = {{ auditd_max_log_file_action }}
         regexp: ^\s*max_log_file_action\s*=\s*.*$
         state: present
     tags:
@@ -2693,16 +2605,10 @@
     - PCI-DSS-Req-10.7
     - CJIS-5.4.1.1
 
--   name: XCCDF Value var_auditd_space_left_action
-    set_fact:
-        var_auditd_space_left_action: email
-    tags:
-    - always
-
 -   name: Configure auditd space_left Action on Low Disk Space
     lineinfile:
         dest: /etc/audit/auditd.conf
-        line: space_left_action = {{ var_auditd_space_left_action }}
+        line: space_left_action = {{ auditd_space_left_action }}
         regexp: ^\s*space_left_action\s*=\s*.*$
         state: present
     tags:
@@ -2721,16 +2627,10 @@
     - PCI-DSS-Req-10.7
     - CJIS-5.4.1.1
 
--   name: XCCDF Value var_auditd_admin_space_left_action
-    set_fact:
-        var_auditd_admin_space_left_action: single
-    tags:
-    - always
-
 -   name: Configure auditd admin_space_left Action on Low Disk Space
     lineinfile:
         dest: /etc/audit/auditd.conf
-        line: admin_space_left_action = {{ var_auditd_admin_space_left_action }}
+        line: admin_space_left_action = {{ auditd_admin_space_left_action }}
         regexp: ^\s*admin_space_left_action\s*=\s*.*$
         state: present
     tags:
@@ -2749,16 +2649,10 @@
     - CJIS-5.4.1.1
     - DISA-STIG-RHEL-07-030340
 
--   name: XCCDF Value var_auditd_action_mail_acct
-    set_fact:
-        var_auditd_action_mail_acct: root
-    tags:
-    - always
-
 -   name: Configure auditd mail_acct Action on Low Disk Space
     lineinfile:
         dest: /etc/audit/auditd.conf
-        line: action_mail_acct = {{ var_auditd_action_mail_acct }}
+        line: action_mail_acct = {{ auditd_action_mail_acct }}
         state: present
     tags:
     - auditd_data_retention_action_mail_acct
@@ -2777,16 +2671,10 @@
     - CJIS-5.4.1.1
     - DISA-STIG-RHEL-07-030350
 
--   name: XCCDF Value var_auditd_num_logs
-    set_fact:
-        var_auditd_num_logs: '5'
-    tags:
-    - always
-
 -   name: Configure auditd Number of Logs Retained
     lineinfile:
         dest: /etc/audit/auditd.conf
-        line: num_logs = {{ var_auditd_num_logs }}
+        line: num_logs = {{ auditd_num_logs }}
         regexp: ^\s*num_logs\s*=\s*.*$
         state: present
     tags:
@@ -2874,18 +2762,12 @@
     - PCI-DSS-Req-7.1
     - CJIS-5.5.2.2
 
--   name: XCCDF Value var_password_pam_unix_remember
-    set_fact:
-        var_password_pam_unix_remember: '4'
-    tags:
-    - always
-
 -   name: Do not allow users to reuse recent passwords - system-auth (change)
     replace:
         dest: /etc/pam.d/system-auth
         follow: true
         regexp: ^(password\s+sufficient\s+pam_unix\.so\s.*remember\s*=\s*)(\S+)(.*)$
-        replace: \g<1>{{ var_password_pam_unix_remember }}\g<3>
+        replace: \g<1>{{ password_pam_unix_remember }}\g<3>
     tags:
     - accounts_password_pam_unix_remember
     - medium_severity
@@ -2905,7 +2787,7 @@
         dest: /etc/pam.d/system-auth
         follow: true
         regexp: ^password\s+sufficient\s+pam_unix\.so\s(?!.*remember\s*=\s*).*$
-        replace: \g<0> remember={{ var_password_pam_unix_remember }}
+        replace: \g<0> remember={{ password_pam_unix_remember }}
     tags:
     - accounts_password_pam_unix_remember
     - medium_severity
@@ -2920,24 +2802,6 @@
     - CJIS-5.6.2.1.1
     - DISA-STIG-RHEL-07-010270
 
--   name: XCCDF Value var_accounts_passwords_pam_faillock_deny
-    set_fact:
-        var_accounts_passwords_pam_faillock_deny: '6'
-    tags:
-    - always
-
--   name: XCCDF Value var_accounts_passwords_pam_faillock_unlock_time
-    set_fact:
-        var_accounts_passwords_pam_faillock_unlock_time: '1800'
-    tags:
-    - always
-
--   name: XCCDF Value var_accounts_passwords_pam_faillock_fail_interval
-    set_fact:
-        var_accounts_passwords_pam_faillock_fail_interval: '900'
-    tags:
-    - always
-
 -   name: set auth pam_faillock before pam_unix.so
     pamd:
         name: system-auth
@@ -2947,8 +2811,8 @@
         new_type: auth
         new_control: required
         new_module_path: pam_faillock.so
-        module_arguments: 'preauth silent deny: {{ var_accounts_passwords_pam_faillock_deny }} unlock_time={{ var_accounts_passwords_pam_faillock_unlock_time
-            }} fail_interval={{ var_accounts_passwords_pam_faillock_fail_interval }}'
+        module_arguments: 'preauth silent deny: {{ accounts_passwords_pam_faillock_deny }} unlock_time={{ accounts_passwords_pam_faillock_unlock_time
+            }} fail_interval={{ accounts_passwords_pam_faillock_fail_interval }}"
         state: before
     tags:
     - accounts_passwords_pam_faillock_deny
@@ -2972,8 +2836,8 @@
         new_type: auth
         new_control: '[default=die]'
         new_module_path: pam_faillock.so
-        module_arguments: 'preauth silent deny: {{ var_accounts_passwords_pam_faillock_deny }} unlock_time={{ var_accounts_passwords_pam_faillock_unlock_time
-            }} fail_interval={{ var_accounts_passwords_pam_faillock_fail_interval }}'
+        module_arguments: 'preauth silent deny: {{ accounts_passwords_pam_faillock_deny }} unlock_time={{ accounts_passwords_pam_faillock_unlock_time
+            }} fail_interval={{ accounts_passwords_pam_faillock_fail_interval }}"
         state: after
     tags:
     - accounts_passwords_pam_faillock_deny
@@ -3056,18 +2920,12 @@
     - CJIS-5.6.2.2
     - DISA-STIG-RHEL-07-010220
 
--   name: XCCDF Value var_password_pam_lcredit
-    set_fact:
-        var_password_pam_lcredit: '-1'
-    tags:
-    - always
-
 -   name: Ensure PAM variable lcredit is set accordingly
     lineinfile:
         create: true
         dest: /etc/security/pwquality.conf
         regexp: ^#?\s*lcredit
-        line: lcredit = {{ var_password_pam_lcredit }}
+        line: lcredit = {{ password_pam_lcredit }}
     tags:
     - accounts_password_pam_lcredit
     - medium_severity
@@ -3081,18 +2939,12 @@
     - PCI-DSS-Req-8.2.3
     - DISA-STIG-RHEL-07-010130
 
--   name: XCCDF Value var_password_pam_dcredit
-    set_fact:
-        var_password_pam_dcredit: '-1'
-    tags:
-    - always
-
 -   name: Ensure PAM variable dcredit is set accordingly
     lineinfile:
         create: true
         dest: /etc/security/pwquality.conf
         regexp: ^#?\s*dcredit
-        line: dcredit = {{ var_password_pam_dcredit }}
+        line: dcredit = {{ password_pam_dcredit }}
     tags:
     - accounts_password_pam_dcredit
     - medium_severity
@@ -3107,18 +2959,12 @@
     - PCI-DSS-Req-8.2.3
     - DISA-STIG-RHEL-07-010140
 
--   name: XCCDF Value var_password_pam_minlen
-    set_fact:
-        var_password_pam_minlen: '7'
-    tags:
-    - always
-
 -   name: Ensure PAM variable minlen is set accordingly
     lineinfile:
         create: true
         dest: /etc/security/pwquality.conf
         regexp: ^#?\s*minlen
-        line: minlen = {{ var_password_pam_minlen }}
+        line: minlen = {{ password_pam_minlen }}
     tags:
     - accounts_password_pam_minlen
     - medium_severity
@@ -3131,18 +2977,12 @@
     - CJIS-5.6.2.1.1
     - DISA-STIG-RHEL-07-010280
 
--   name: XCCDF Value var_password_pam_ucredit
-    set_fact:
-        var_password_pam_ucredit: '-1'
-    tags:
-    - always
-
 -   name: Ensure PAM variable ucredit is set accordingly
     lineinfile:
         create: true
         dest: /etc/security/pwquality.conf
         regexp: ^#?\s*ucredit
-        line: ucredit = {{ var_password_pam_ucredit }}
+        line: ucredit = {{ password_pam_ucredit }}
     tags:
     - accounts_password_pam_ucredit
     - medium_severity
@@ -3156,18 +2996,12 @@
     - PCI-DSS-Req-8.2.3
     - DISA-STIG-RHEL-07-010120
 
--   name: XCCDF Value var_account_disable_post_pw_expiration
-    set_fact:
-        var_account_disable_post_pw_expiration: '90'
-    tags:
-    - always
-
 -   name: Set Account Expiration Following Inactivity
     lineinfile:
         create: true
         dest: /etc/default/useradd
         regexp: ^INACTIVE
-        line: INACTIVE={{ var_account_disable_post_pw_expiration }}
+        line: INACTIVE={{ account_disable_post_pw_expiration }}
     tags:
     - account_disable_post_pw_expiration
     - medium_severity
@@ -3183,18 +3017,12 @@
     - CJIS-5.6.2.1.1
     - DISA-STIG-RHEL-07-010310
 
--   name: XCCDF Value var_accounts_maximum_age_login_defs
-    set_fact:
-        var_accounts_maximum_age_login_defs: '90'
-    tags:
-    - always
-
 -   name: Set Password Maximum Age
     lineinfile:
         create: true
         dest: /etc/login.defs
         regexp: ^#?PASS_MAX_DAYS
-        line: PASS_MAX_DAYS {{ var_accounts_maximum_age_login_defs }}
+        line: PASS_MAX_DAYS {{ accounts_maximum_age_login_defs }}
     tags:
     - accounts_maximum_age_login_defs
     - medium_severity
@@ -3253,12 +3081,6 @@
     - PCI-DSS-Req-8.2.3
     - CJIS-5.5.2
     - DISA-STIG-RHEL-07-010290
-
--   name: XCCDF Value sshd_idle_timeout_value
-    set_fact:
-        sshd_idle_timeout_value: '900'
-    tags:
-    - always
 
 -   name: Set SSH Idle Timeout Interval
     lineinfile:
